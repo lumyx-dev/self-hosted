@@ -1,0 +1,42 @@
+# Lumyx self-hosted: dashboard + SFU behind Caddy (automatic HTTPS).
+# Configuration lives in .env — start from .env.example.
+
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DASHBOARD_DOMAIN: ${DASHBOARD_DOMAIN:?set DASHBOARD_DOMAIN in .env}
+      SFU_DOMAIN: ${SFU_DOMAIN:?set SFU_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - dashboard
+      - sfu
+
+  dashboard:
+    image: ghcr.io/lumyx-dev/dashboard:${DASHBOARD_VERSION:-0.1.0}
+    restart: unless-stopped
+
+  sfu:
+    image: ghcr.io/lumyx-dev/sfu-core:${SFU_VERSION:-0.1.0}
+    restart: unless-stopped
+    environment:
+      SFU_ICE_HOST: ${PUBLIC_IP:?set PUBLIC_IP in .env}
+      SFU_UDP_PORT_MIN: ${UDP_PORT_MIN:-40000}
+      SFU_UDP_PORT_MAX: ${UDP_PORT_MAX:-40099}
+      SFU_REGION: ${SFU_REGION:-local}
+      SFU_LOG: ${SFU_LOG:-info}
+    ports:
+      # Same range on both sides: the SFU advertises its own port in ICE candidates.
+      - "${UDP_PORT_MIN:-40000}-${UDP_PORT_MAX:-40099}:${UDP_PORT_MIN:-40000}-${UDP_PORT_MAX:-40099}/udp"
+
+volumes:
+  caddy_data:
+  caddy_config:

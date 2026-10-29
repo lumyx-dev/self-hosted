@@ -1,0 +1,9 @@
+# Build the images from sibling checkouts instead of pulling them:
+#   docker compose -f compose.yaml -f compose.build.yaml up --build
+services:
+  dashboard:
+    image: lumyx/dashboard:dev
+    build: ../dashboard
+  sfu:
+    image: lumyx/sfu-core:dev
+    build: ../sfu-core

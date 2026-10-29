@@ -1,0 +1,15 @@
+{$DASHBOARD_DOMAIN} {
+	reverse_proxy dashboard:3001
+}
+
+{$SFU_DOMAIN} {
+	# Only signaling and liveness are public. /metrics stays on the internal
+	# network, where the dashboard reaches it as http://sfu:3000/metrics.
+	@public path /ws /health
+	handle @public {
+		reverse_proxy sfu:3000
+	}
+	handle {
+		respond 404
+	}
+}
